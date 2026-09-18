@@ -10,3 +10,5 @@
 .vscode/
 *.swp
 *~
+a.out
+app
