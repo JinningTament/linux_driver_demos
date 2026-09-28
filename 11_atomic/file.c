@@ -22,14 +22,18 @@ struct device_test {
 }; // 加上分号
 
 struct device_test dev1;
+static spinlock_t spinlock;
+static int flag=1;
 
-static atomic64_t v=ATOMIC_INIT(1);
 static int cdev_test_open(struct inode *inode, struct file *file)
 {
-    if(!atomic64_dec_and_test(&v)){
-        atomic64_inc(&v);
+    spin_lock(&spinlock);
+    if(flag!=1){
+        spin_unlock(&spinlock);
         return -EBUSY;
     }
+    flag=0;
+    spin_unlock(&spinlock);
     file->private_data = &dev1;
     printk(KERN_INFO "this is open\n");
     return 0;
@@ -76,7 +80,11 @@ static ssize_t cdev_test_write(struct file *file, const char __user *buf, size_t
 
 static int cdev_test_release(struct inode *inode, struct file *file)
 {
-    atomic64_inc(&v);
+    spin_lock(&spinlock);
+   
+    flag=1;
+    spin_unlock(&spinlock);
+
     file->private_data = NULL; // 清理私有数据
     printk(KERN_INFO "this is release\n");
     return 0;

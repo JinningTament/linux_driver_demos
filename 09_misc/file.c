@@ -55,6 +55,7 @@ static int moduledev_init(void)
         printk("error for misc_register\n");
         return -1;
     }
+    
     return 0;
 }
 
