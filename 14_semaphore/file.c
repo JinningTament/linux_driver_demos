@@ -1,19 +1,20 @@
-#include <linux/init.h>
+ #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
 #include <linux/kdev_t.h>
 #include <linux/delay.h>
 #include <linux/uaccess.h>
+#include <linux/string.h>
 #include <linux/spinlock.h>
+#include <linux/semaphore.h>
 
-static spinlock_t spinlock_test;//定义spinlock_t类型的自旋锁变量spinlock_test
-static int flag = 1;//定义flag标准为，flag等于1表示设备没有被打开，等于0则证明设备已经被打开了
+
+
+static struct semaphore sema;
 static int open_test(struct inode *inode,struct file *file)
 {
-	//printk("\nthis is open_test \n");
-	spin_lock(&spinlock_test);//自旋锁加锁
-	
+	down(&sema);
 	return 0;
 }
 
@@ -48,8 +49,7 @@ static ssize_t write_test(struct file *file,const char __user *ubuf,size_t len,l
 }
 static int release_test(struct inode *inode,struct file *file)
 {
-	printk("\nthis is release_test \n");
-	spin_unlock(&spinlock_test);//自旋锁解锁
+	up(&sema);
 	return 0;
 }
 
@@ -70,7 +70,7 @@ struct file_operations fops_test = {
  
 static int __init atomic_init(void)
 {
-	spin_lock_init(&spinlock_test);
+	sema_init(&sema,1);
 	if(alloc_chrdev_region(&dev1.dev_num,0,1,"chrdev_name") < 0 ){//自动获取设备号，设备名chrdev_name
 		printk("alloc_chrdev_region is error \n");
 	}
@@ -95,6 +95,6 @@ static void __exit atomic_exit(void)
 	printk("module exit \n");
 }
 module_init(atomic_init);
-module_exit(atomic_exit)
+module_exit(atomic_exit);
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("topeet");
